@@ -2,7 +2,7 @@
 
 Privacy-first browser video rough-cutting with local media processing.
 
-![プロジェクトのビジュアル](docs/assets/hero-system-v1.png)
+![jack-cut-local project visual](assets/jack-cut-local-hero.png)
 
 ## できること
 

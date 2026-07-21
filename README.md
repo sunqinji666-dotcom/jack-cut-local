@@ -2,7 +2,7 @@
 
 # Jack Cut Local
 
-![Project visual](docs/assets/hero-system-v1.png)
+![jack-cut-local project visual](docs/assets/jack-cut-local-hero.png)
 
 ### 视频留在你的电脑上，粗剪不必把素材交给服务器。
 
