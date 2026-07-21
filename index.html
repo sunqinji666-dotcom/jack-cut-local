@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Jack Cut Local · 本地粗剪站</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">JC</div>
+        <div>
+          <h1>Jack Cut Local</h1>
+          <p>纯前端本地粗剪站 · 服务器只发页面，不碰文件</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <span class="status-pill" id="storage-pill">本地项目存储</span>
+        <button class="ghost-btn" id="persist-btn" type="button">启用持久存储</button>
+        <button class="primary-btn" id="new-project-btn" type="button">新建空项目</button>
+      </div>
+    </header>
+
+    <main class="workspace-grid">
+      <aside class="panel sidebar">
+        <div class="panel-head">
+          <div>
+            <h2>最近项目</h2>
+            <p>保存在浏览器本地，刷新后还能继续开。</p>
+          </div>
+          <span class="subtle-badge" id="project-count">0 个</span>
+        </div>
+
+        <div class="project-list" id="project-list"></div>
+
+        <div class="sidebar-foot">
+          <div class="metric">
+            <span class="metric-label">浏览器可用</span>
+            <strong id="storage-usage">--</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">状态</span>
+            <strong id="storage-state">未激活</strong>
+          </div>
+        </div>
+      </aside>
+
+      <section class="center-column">
+        <section class="panel drop-panel" id="dropzone">
+          <input
+            id="video-input"
+            type="file"
+            accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi"
+            hidden
+          />
+
+          <div class="dropzone-copy">
+            <span class="kicker">导入本地视频</span>
+            <h2>拖进来，或者点这里选一个视频</h2>
+            <p>文件只在本机浏览器里处理和保存，不会上传服务器。</p>
+          </div>
+          <button class="primary-btn large" id="choose-file-btn" type="button">选择视频文件</button>
+        </section>
+
+        <section class="panel preview-panel">
+          <div class="panel-head compact">
+            <div>
+              <h2 id="active-project-name">还没有打开项目</h2>
+              <p id="active-project-meta">导入一个视频后，裁切和导出流程会在这里进行。</p>
+            </div>
+
+            <div class="inline-actions">
+              <button class="ghost-btn" id="rename-btn" type="button">重命名</button>
+              <button class="ghost-btn" id="duplicate-btn" type="button">复制项目</button>
+              <button class="danger-btn" id="delete-btn" type="button">删除项目</button>
+            </div>
+          </div>
+
+          <div class="preview-stage" id="preview-stage">
+            <div class="preview-empty" id="preview-empty">
+              <div class="preview-empty-copy">
+                <span class="kicker">本地预览</span>
+                <h3>先导入一个视频</h3>
+                <p>预览、裁切、片段编辑和导出都只在你这台电脑里完成。</p>
+              </div>
+            </div>
+
+            <div class="preview-frame" id="preview-frame" hidden>
+              <video id="video-player" playsinline preload="metadata"></video>
+              <div class="crop-overlay">
+                <div class="crop-guides"></div>
+                <div class="crop-corner tl"></div>
+                <div class="crop-corner tr"></div>
+                <div class="crop-corner bl"></div>
+                <div class="crop-corner br"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="transport-bar">
+            <button class="chip-btn" id="play-btn" type="button" disabled>播放</button>
+            <button class="chip-btn" id="loop-btn" type="button" disabled>循环片段</button>
+            <div class="transport-time" id="transport-time">00:00.00 / 00:00.00</div>
+            <input id="seek-range" class="seek-range" type="range" min="0" max="0" step="0.01" value="0" disabled />
+          </div>
+        </section>
+
+        <section class="panel trim-panel">
+          <div class="panel-head compact">
+            <div>
+              <h2>当前片段</h2>
+              <p>简易时间线。片段会按顺序导出成一个 MP4。</p>
+            </div>
+            <div class="inline-actions">
+              <button class="ghost-btn" id="add-segment-btn" type="button" disabled>新建片段</button>
+            </div>
+          </div>
+
+          <div class="trim-grid">
+            <label class="field">
+              <span>片段名称</span>
+              <input id="segment-label" type="text" placeholder="主片段" disabled />
+            </label>
+            <label class="field">
+              <span>起点</span>
+              <input id="segment-start" type="range" min="0" max="0" step="0.01" value="0" disabled />
+            </label>
+            <label class="field">
+              <span>终点</span>
+              <input id="segment-end" type="range" min="0" max="0" step="0.01" value="0" disabled />
+            </label>
+          </div>
+
+          <div class="trim-readout">
+            <span id="segment-range-text">--</span>
+            <span id="segment-duration-text">--</span>
+          </div>
+
+          <div class="timeline-shell">
+            <div class="timeline-bar" id="timeline-bar"></div>
+            <div class="timeline-hint">点击片段切换；上下按钮调整导出顺序。</div>
+          </div>
+
+          <div class="segment-list" id="segment-list"></div>
+        </section>
+      </section>
+
+      <aside class="panel inspector">
+        <div class="panel-head">
+          <div>
+            <h2>画面裁切</h2>
+            <p>调整输出画幅、缩放和位置。</p>
+          </div>
+          <span class="subtle-badge" id="output-ratio-label">原始</span>
+        </div>
+
+        <div class="stack">
+          <label class="field">
+            <span>输出画幅</span>
+            <select id="aspect-select">
+              <option value="original">原始</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="1:1">1:1</option>
+              <option value="4:5">4:5</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>缩放</span>
+            <input id="zoom-range" type="range" min="1" max="3" step="0.01" value="1" />
+            <small id="zoom-value">1.00×</small>
+          </label>
+
+          <label class="field">
+            <span>X 方向平移</span>
+            <input id="offset-x" type="range" min="-100" max="100" step="1" value="0" />
+            <small id="offset-x-value">0</small>
+          </label>
+
+          <label class="field">
+            <span>Y 方向平移</span>
+            <input id="offset-y" type="range" min="-100" max="100" step="1" value="0" />
+            <small id="offset-y-value">0</small>
+          </label>
+
+          <button class="ghost-btn" id="reset-crop-btn" type="button" disabled>重置裁切</button>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-head compact">
+          <div>
+            <h2>导出</h2>
+            <p>ffmpeg.wasm 在浏览器里本地跑，服务器不参与处理。</p>
+          </div>
+        </div>
+
+        <div class="stack">
+          <label class="field">
+            <span>导出文件名</span>
+            <input id="export-name" type="text" placeholder="jack-cut-export" disabled />
+          </label>
+
+          <label class="field">
+            <span>质量预设</span>
+            <select id="quality-select" disabled>
+              <option value="draft">快速预览</option>
+              <option value="balanced" selected>平衡</option>
+              <option value="high">高质量</option>
+            </select>
+          </label>
+
+          <button class="primary-btn large" id="export-btn" type="button" disabled>导出 MP4</button>
+
+          <div class="progress-shell">
+            <div class="progress-track">
+              <div class="progress-fill" id="export-progress"></div>
+            </div>
+            <div class="progress-meta">
+              <span id="export-status">等待导出</span>
+              <span id="export-percent">0%</span>
+            </div>
+          </div>
+
+          <div class="export-history">
+            <div class="export-history-head">
+              <strong>最近导出</strong>
+              <span class="subtle-badge" id="export-count">0 个</span>
+            </div>
+            <div id="export-list" class="export-list"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <footer class="app-footer">
+      <span>JACK CUT LOCAL</span>
+      <span>Built by Jacksun · 孙秦吉</span>
+      <span>Private by design · MIT License</span>
+    </footer>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

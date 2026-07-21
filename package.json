@@ -1,0 +1,12 @@
+{
+  "name": "jack-cut-local",
+  "version": "1.0.0",
+  "description": "A privacy-first, browser-based local video rough-cut editor.",
+  "license": "MIT",
+  "author": "Jacksun (孙秦吉)",
+  "private": false,
+  "scripts": {
+    "dev": "python3 -m http.server 4173",
+    "test": "node --test tests/smoke.test.mjs"
+  }
+}
